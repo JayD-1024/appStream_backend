@@ -1,0 +1,30 @@
+# Binaries and objects
+/bin/
+/pkg/
+*.o
+*.a
+*.so
+*.exe
+*.exe~
+
+# Dependency directories (remove the comment below if you want to ignore)
+# vendor/
+
+# IDE/Editor folders
+.vscode/
+.idea/
+*.swp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Log and temporary files
+*.log
+*.tmp
+
+# Environment files
+.env
+
+# Debug folder
+debug/
