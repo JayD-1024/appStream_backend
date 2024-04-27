@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 	"reflect"
-
+    "errors"
 	"appstore/backend"
 	"appstore/constants"
 	"appstore/gateway/stripe"
@@ -99,3 +99,28 @@ func getAppFromSearchResult(searchResult *elastic.SearchResult) []model.App {
    }
    return apps
 }
+
+func SearchAppByID(appID string) (*model.App, error) {
+    query := elastic.NewTermQuery("id", appID)
+    searchResult, err := backend.ESBackend.ReadFromES(query, constants.APP_INDEX)
+    if err != nil {
+        return nil, err
+    }
+    results := getAppFromSearchResult(searchResult)
+    if len(results) == 1 {
+        return &results[0], nil
+    }
+    return nil, nil
+ }
+ 
+ func CheckoutApp(domain string, appID string) (string, error) {
+    app, err := SearchAppByID(appID)
+    if err != nil {
+        return "", err
+    }
+    if app == nil {
+        return "", errors.New("unable to find app in elasticsearch")
+    }
+    return stripe.CreateCheckoutSession(domain, app.PriceID)
+ }
+ 
