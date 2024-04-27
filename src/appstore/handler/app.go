@@ -1,11 +1,12 @@
 package handler
 
 import (
-    "encoding/json"
-    "fmt"
-    "net/http"
-   
-    "appstore/model"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"appstore/model"
+	"appstore/service"
 )
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,3 +20,28 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
     fmt.Fprintf(w, "Upload request received: %s\n", app.Description)
 }
+
+func searchHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("Received one search request")
+    w.Header().Set("Content-Type", "application/json")
+    title := r.URL.Query().Get("title")
+    description := r.URL.Query().Get("description")
+ 
+ 
+    var apps []model.App
+    var err error
+    apps, err = service.SearchApps(title, description)
+    if err != nil {
+        http.Error(w, "Failed to read Apps from backend", http.StatusInternalServerError)
+        return
+    }
+ 
+ 
+    js, err := json.Marshal(apps)
+    if err != nil {
+        http.Error(w, "Failed to parse Apps into JSON format", http.StatusInternalServerError)
+        return
+    }
+    w.Write(js)
+ }
+ 
