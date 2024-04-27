@@ -1,16 +1,39 @@
 package service
 
 import (
-    "reflect"
+	"fmt"
+	"reflect"
 
-    "appstore/backend"
-    "appstore/constants"
-    "appstore/model"
+	"appstore/backend"
+	"appstore/constants"
+	"appstore/gateway/stripe"
+	"appstore/model"
 
-    "github.com/olivere/elastic/v7"
+	"github.com/olivere/elastic/v7"
 )
 
-
+func SaveApp(app *model.App) error {
+    productID, priceID, err := stripe.CreateProductWithPrice(app.Title, app.Description, int64(app.Price*100))
+    if err != nil {
+        fmt.Printf("Failed to create Product and Price using Stripe SDK %v\n", err)
+        return err
+    }
+    app.ProductID = productID
+           app.PriceID = priceID
+ 
+ //GCS
+ 
+   err = backend.ESBackend.SaveToES(app, constants.APP_INDEX, app.Id)
+    if err != nil {
+        fmt.Printf("Failed to save app to elastic search with app index %v\n", err)
+        return err
+    }
+    fmt.Println("App is saved successfully to ES app index.")
+ 
+    return nil
+ 
+ }
+ 
 func SearchApps(title string, description string) ([]model.App, error) {
    if title == "" {
        return SearchAppsByDescription(description)
