@@ -1,29 +1,38 @@
 package service
 
 import (
-	"fmt"
-	"reflect"
-    "errors"
+    "mime/multipart"
+
 	"appstore/backend"
 	"appstore/constants"
 	"appstore/gateway/stripe"
 	"appstore/model"
+	"errors"
+	"fmt"
+	"reflect"
 
 	"github.com/olivere/elastic/v7"
 )
 
-func SaveApp(app *model.App) error {
+func SaveApp(app *model.App, file multipart.File) error {
+    // Create productID, priceID
     productID, priceID, err := stripe.CreateProductWithPrice(app.Title, app.Description, int64(app.Price*100))
     if err != nil {
         fmt.Printf("Failed to create Product and Price using Stripe SDK %v\n", err)
         return err
     }
     app.ProductID = productID
-           app.PriceID = priceID
- 
- //GCS
- 
-   err = backend.ESBackend.SaveToES(app, constants.APP_INDEX, app.Id)
+    app.PriceID = priceID
+    
+    // Save to GCS
+    medialink, err := backend.GCSBackend.SaveToGCS(file, app.Id)
+    if err != nil {
+        return err
+    }
+    app.Url = medialink
+
+    // Save to ES
+    err = backend.ESBackend.SaveToES(app, constants.APP_INDEX, app.Id)
     if err != nil {
         fmt.Printf("Failed to save app to elastic search with app index %v\n", err)
         return err
