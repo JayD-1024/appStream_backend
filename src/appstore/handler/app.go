@@ -8,14 +8,20 @@ import (
 	"appstore/model"
 	"appstore/service"
     "github.com/pborman/uuid"
+    jwt "github.com/form3tech-oss/jwt-go"
 )
 
  func uploadHandler(w http.ResponseWriter, r *http.Request) {
     // Parse from body of request to get a json object.
     fmt.Println("Received one upload request")
+
+    token := r.Context().Value("user")
+    claims := token.(*jwt.Token).Claims
+    username := claims.(jwt.MapClaims)["username"]
+
     app := model.App{
         Id:          uuid.New(),
-        User:        r.FormValue("user"),
+        User:        username.(string),
         Title:       r.FormValue("title"),
         Description: r.FormValue("description"),
     }
@@ -27,6 +33,7 @@ import (
     }
     app.Price = price
  
+    
  
     file, _, err := r.FormFile("media_file")
     if err != nil {
